@@ -50,9 +50,38 @@ app.use(timeout)
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
 
-/*
-Your code here
-*/
+app.get('/authorize', function(req,res){
+	let request_id = randomString();
+	requests[request_id] = req.query;
+	let clientID = req.query["client_id"];
+	let scope = req.query.scope;
+	let validClient = clientID in clients;
+	let validScopes = validClient ? clients[clientID].scopes.includes(scope) : false;
+	let valid = validClient && validScopes;
+	if (valid) {
+		res.status(200);
+		return res.render("login", {
+			"client": clients[clientID],
+			"scope": scope,
+			"requestId": request_id
+		});
+	}
+	return res.sendStatus(401);
+});
+
+app.post('/approve', function(req,res){
+	const { userName, password, requestId } = req.body
+	if (!userName || users[userName] !== password) {
+		res.status(401).send("Error: user not authorized")
+		return
+	}
+	const clientReq = requests[requestId]
+	delete requests[requestId]
+	if (!clientReq) {
+		res.status(401).send("Error: invalid user request")
+		return
+	}
+})
 
 const server = app.listen(config.port, "localhost", function () {
 	var host = server.address().address
