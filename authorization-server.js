@@ -1,4 +1,5 @@
 const fs = require("fs")
+const url = require("url")
 const express = require("express")
 const bodyParser = require("body-parser")
 const jwt = require("jsonwebtoken")
@@ -81,6 +82,15 @@ app.post('/approve', function(req,res){
 		res.status(401).send("Error: invalid user request")
 		return
 	}
+	const code = randomString()
+	authorizationCodes[code] = {
+		"clientReq": clientReq,
+		"userName": userName
+	}
+	let testUrl = new URL(clientReq.redirect_uri)
+	testUrl.searchParams.append("code", code)
+	testUrl.searchParams.append("state", clientReq.state)
+	res.redirect(url.format(testUrl))
 })
 
 const server = app.listen(config.port, "localhost", function () {
