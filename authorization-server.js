@@ -93,6 +93,17 @@ app.post('/approve', function(req,res){
 	res.redirect(url.format(testUrl))
 })
 
+app.post('/token', function (req,res) {
+	if (req.headers.authorization == null) {
+		res.status(401).send("Error: user not authorized")
+		return
+	}
+	const {clientId, clientSecret} = decodeAuthCredentials(req.headers.authorization)
+	if (clients[clientId].clientSecret !== clientSecret) {
+		res.status(401).send("Error: user not authorized")
+	}
+})
+
 const server = app.listen(config.port, "localhost", function () {
 	var host = server.address().address
 	var port = server.address().port
