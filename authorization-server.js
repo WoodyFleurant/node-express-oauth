@@ -101,7 +101,18 @@ app.post('/token', function (req,res) {
 	const {clientId, clientSecret} = decodeAuthCredentials(req.headers.authorization)
 	if (clients[clientId].clientSecret !== clientSecret) {
 		res.status(401).send("Error: user not authorized")
+		return
 	}
+	if (req.body.code == null){
+		res.status(401).send("Error: user not authorized")
+		return
+	}
+	if (authorizationCodes[req.body.code] == null) {
+		res.status(401).send("Error: user not authorized")
+		return
+	}
+	const code = authorizationCodes[req.body.code]
+	delete authorizationCodes[req.body.code]
 })
 
 const server = app.listen(config.port, "localhost", function () {
