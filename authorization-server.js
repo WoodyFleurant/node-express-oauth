@@ -121,7 +121,7 @@ app.post('/token', function (req,res) {
 	return res.status(200).json({
 		"access_token": accessToken,
 		"token_type": "Bearer"
-	})
+	});
 })
 
 const server = app.listen(config.port, "localhost", function () {
