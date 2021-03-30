@@ -113,6 +113,15 @@ app.post('/token', function (req,res) {
 	}
 	const code = authorizationCodes[req.body.code]
 	delete authorizationCodes[req.body.code]
+	const body = {
+		"userName": code.userName,
+		"scope": code.clientReq.scope
+	}
+	const accessToken = jwt.sign(body, config.privateKey, { algorithm: 'RS256'})
+	return res.status(200).json({
+		"access_token": accessToken,
+		"token_type": "Bearer"
+	})
 })
 
 const server = app.listen(config.port, "localhost", function () {
