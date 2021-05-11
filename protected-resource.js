@@ -2,6 +2,7 @@ const express = require("express")
 const bodyParser = require("body-parser")
 const fs = require("fs")
 const { timeout } = require("./utils")
+const jwt = require("jsonwebtoken")
 
 const config = {
 	port: 9002,
@@ -31,6 +32,28 @@ app.use(bodyParser.urlencoded({ extended: true }))
 /*
 Your code here
 */
+
+app.get('/user-info', function(req,res){
+	if (req.headers.authorization == null) {
+		return res.sendStatus(401);
+	}
+	let authorizationToken = req.headers.authorization.slice(7);
+	try {
+		let decoded = jwt.verify(authorizationToken, config.publicKey, ["RS256"])
+		let username = decoded.userName;
+		let user = username in users ? users[username] : undefined;
+		let result = {}
+		for (let scope of decoded.scope.split(" ")) {
+			let permission = scope.slice(11);
+			if (permission in user) {
+				result[permission] = user[permission]
+			}
+		}
+		return res.json(result);
+	} catch (err) {
+		return res.sendStatus(401);
+	}
+})
 
 const server = app.listen(config.port, "localhost", function () {
 	var host = server.address().address
