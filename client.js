@@ -15,7 +15,6 @@ const config = {
 	userInfoEndpoint: "http://localhost:9002/user-info",
 }
 let state = ""
-
 const app = express()
 app.set("view engine", "ejs")
 app.set("views", "assets/client")
@@ -26,6 +25,53 @@ app.use(bodyParser.urlencoded({ extended: true }))
 /*
 Your code here
 */
+app.get("/authorize", function (req, res) {
+	state = randomString()
+	let redirectURI = new URL(config.authorizationEndpoint);
+	redirectURI.searchParams.set("response_type", "code")
+	redirectURI.searchParams.set("client_id", config.clientId)
+	redirectURI.searchParams.set("redirect_uri", config.redirectUri)
+	redirectURI.searchParams.set("scope", "permission:name permission:date_of_birth")
+	redirectURI.searchParams.set("state", state)
+
+	res.redirect(redirectURI.href);
+})
+
+app.get("/callback", function (req, res) {
+	let requestState = req.query.state
+	if (requestState !== state) {
+		return res.sendStatus(403)
+	}
+	const { code } = req.query
+	axios({
+		method: "POST",
+		url: config.tokenEndpoint,
+		auth: {
+			username: config.clientId,
+			password: config.clientSecret
+		},
+		data: {
+			code
+		},
+		validateStatus: null,
+	})
+		.then((response) => {
+			return axios({
+				method: "GET",
+				url: config.userInfoEndpoint,
+				headers: {
+					authorization: "bearer " + response.data.access_token,
+				},
+			})
+		})
+		.then((response) => {
+			res.render("welcome", { user: response.data })
+		})
+		.catch((err) => {
+			console.error(err)
+			res.status(500).send("Error: something went wrong")
+		})
+})
 
 const server = app.listen(config.port, "localhost", function () {
 	var host = server.address().address
